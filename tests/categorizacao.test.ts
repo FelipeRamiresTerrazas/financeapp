@@ -17,12 +17,13 @@ const ARVORE: Record<string, string[]> = {
   'Empréstimos e financiamentos': ['Pix no crédito', 'Empréstimos', 'Financiamento imobiliário', 'Parcelamento de fatura'],
   Outros: ['Pix e transferências', 'Saques', 'Doações', 'Diversos'],
   Receitas: ['Salário', 'Pró-labore e empresa', 'Rendimentos', 'Reembolsos e estornos', 'Pix recebido', 'Outras receitas'],
-  Transferências: ['Pagamento de fatura', 'Entre contas próprias', 'Aplicações e resgates'],
+  Transferências: ['Pagamento de fatura', 'Entre contas próprias', 'Aplicações e resgates', 'Pix com cartão de crédito'],
 }
 const SISTEMA: Record<string, string> = {
   'Transferências/Pagamento de fatura': 'pagamento_fatura',
   'Transferências/Entre contas próprias': 'transferencia_propria',
   'Transferências/Aplicações e resgates': 'investimentos',
+  'Transferências/Pix com cartão de crédito': 'pix_credito',
   'Outros/Diversos': 'outros',
   'Outros/Pix e transferências': 'pix_enviado',
   'Receitas/Outras receitas': 'outras_receitas',
@@ -132,6 +133,54 @@ describe('transferências que não são gasto', () => {
   })
   it('estorno no cartão vai para "Reembolsos e estornos"', () => {
     expect(cat({ description: 'ESTORNO LOJA X', type: 'CREDIT', accountType: 'CREDIT', operationType: 'ESTORNO' }).categoryId).toBe('Receitas/Reembolsos e estornos')
+  })
+})
+
+describe('casos reais da primeira sincronização (Itaú via Meu Pluggy)', () => {
+  const cat = categorizador()
+  const conta = (description: string, type: 'DEBIT' | 'CREDIT', extra: Partial<TransacaoParaCategorizar> = {}): TransacaoParaCategorizar =>
+    ({ description, type, accountType: 'BANK', ...extra })
+
+  // Pix no crédito, opção (b): o gasto são as parcelas no cartão; o dinheiro que entra e sai da
+  // conta no dia do Pix fica em Transferências e se anula
+  it('"Crédito liberado para Pix" não é receita', () => {
+    expect(cat(conta('Crédito liberado para Pix PERSONNALITE 7735', 'CREDIT', { pluggyCategory: 'Non-recurring income' })).categoryId)
+      .toBe('Transferências/Pix com cartão de crédito')
+  })
+  it('"Pix enviado com cartão" não é gasto (as parcelas no cartão é que são)', () => {
+    expect(cat(conta('Pix enviado com cartão PJBANK', 'DEBIT', { operationType: 'OUTROS' })).categoryId)
+      .toBe('Transferências/Pix com cartão de crédito')
+  })
+  it('parcelas do Pix no crédito no cartão', () => {
+    expect(cat(compraCartao('PIX FELIPE RAMIRES04/10', { operationType: 'OUTROS' })).categoryId).toBe('Empréstimos e financiamentos/Pix no crédito')
+  })
+  it.each([
+    [conta('Débito automático Fatura Itau Person Vs Infin', 'DEBIT')],
+    [{ description: 'PAGAMENTO COM SALDO', type: 'CREDIT', accountType: 'CREDIT', pluggyCategory: 'Transfers' } as TransacaoParaCategorizar],
+    [{ description: 'PAGAMENTO DEBITO AUTOMATICO', type: 'CREDIT', accountType: 'CREDIT', pluggyCategory: 'Transfer - Internal' } as TransacaoParaCategorizar],
+  ])('pagamento de fatura: %o', tx => {
+    expect(cat(tx).categoryId).toBe('Transferências/Pagamento de fatura')
+  })
+  it.each([
+    ['Pagamento de boleto DAS-SIMPLES NACIONAL-COD BARRA', 'Impostos e taxas/Impostos'],
+    ['Pagamento de boleto RECEITA FED-DARF NUMERADO-CB', 'Impostos e taxas/Impostos'],
+    ['Pagamento de boleto PREF MUN PIRACICABA', 'Impostos e taxas/Impostos'],
+    ['Pagamento de Pix QR Code MUNICIPIO DE PIRACICABA', 'Impostos e taxas/Impostos'],
+    ['Pagamento de Pix QR Code SUL AMERICA COMPANHIA DE SEGURO SAUDE', 'Saúde/Plano de saúde'],
+    ['Pix enviado MAFE MADEIRAS E FERRAGENS', 'Moradia/Manutenção e reforma'],
+    ['Pagamento de boleto GCI CAIXA - HABITACAO', 'Moradia/Aluguel e financiamento'],
+  ])('%s -> %s', (desc, esperado) => {
+    expect(cat(conta(desc, 'DEBIT', { pluggyCategory: 'Services' })).categoryId).toBe(esperado)
+  })
+  it('categorias genéricas da Pluggy viram a categoria-mãe, depois das palavras-chave', () => {
+    expect(cat(conta('Pagamento de boleto PAGANO PIRACICABA EMPREENDIMENTOS IMOBIL', 'DEBIT', { pluggyCategory: 'Housing' })).categoryId).toBe('Moradia')
+  })
+  it('financiamento debitado na conta', () => {
+    expect(cat(conta('Parcela 002 de 420 LANCAMENTO A DEBITO', 'DEBIT', { operationType: 'OPERACAO_CREDITO', pluggyCategory: 'Transfers' })).categoryId)
+      .toBe('Empréstimos e financiamentos/Empréstimos')
+  })
+  it('compra parcelada no cartão que a Pluggy chama de "Transfers" não vira Pix', () => {
+    expect(cat(compraCartao('ASAAS*IVIAN CAMP  03/06', { pluggyCategory: 'Transfers', operationType: 'PAGAMENTO' })).categoryId).toBe('Outros/Diversos')
   })
 })
 

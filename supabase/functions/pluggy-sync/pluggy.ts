@@ -59,6 +59,12 @@ export interface PluggyTransaction {
   } | null
 }
 
+export class ErroPluggy extends Error {
+  constructor(public status: number, public codigo: string | null, mensagem: string) {
+    super(mensagem)
+  }
+}
+
 export class Pluggy {
   private constructor(private apiKey: string) {}
 
@@ -75,7 +81,12 @@ export class Pluggy {
 
   private async get<T>(caminho: string): Promise<T> {
     const res = await fetch(`${BASE}${caminho}`, { headers: { 'X-API-KEY': this.apiKey } })
-    if (!res.ok) throw new Error(`Pluggy ${caminho.split('?')[0]}: ${res.status} ${await res.text()}`)
+    if (!res.ok) {
+      const corpo = await res.text()
+      let codigo: string | null = null
+      try { codigo = JSON.parse(corpo).codeDescription ?? null } catch { /* corpo sem JSON */ }
+      throw new ErroPluggy(res.status, codigo, `Pluggy ${caminho.split('?')[0]}: ${res.status} ${corpo}`)
+    }
     return res.json()
   }
 
@@ -91,8 +102,18 @@ export class Pluggy {
     return resultados
   }
 
-  itens() {
-    return this.todasAsPaginas<PluggyItem>('/v2/items', '')
+  // Listar conexões é opt-in na Pluggy (desligado por padrão): devolve null se não estiver liberado
+  async itens(): Promise<PluggyItem[] | null> {
+    try {
+      return await this.todasAsPaginas<PluggyItem>('/v2/items', '')
+    } catch (e) {
+      if (e instanceof ErroPluggy && e.codigo === 'LIST_ITEMS_FEATURE_NOT_ENABLED') return null
+      throw e
+    }
+  }
+
+  item(id: string) {
+    return this.get<PluggyItem>(`/items/${encodeURIComponent(id)}`)
   }
 
   async contas(itemId: string) {

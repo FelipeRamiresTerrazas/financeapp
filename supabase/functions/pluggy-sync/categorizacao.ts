@@ -2,9 +2,10 @@
 // pluggy-sync e pelos testes. A ordem de decisão é:
 //   1. regra aprendida (o usuário já categorizou esse estabelecimento/destinatário antes)
 //   2. sistema: pagamento de fatura e transferência entre contas da família (não são gasto)
-//   3. categoria da Pluggy (derivada do CNPJ/CNAE do estabelecimento)
+//   3. categoria específica da Pluggy (derivada do CNPJ/CNAE do estabelecimento)
 //   4. palavras-chave de estabelecimentos brasileiros
-//   5. padrão: "Pix e transferências", "Pix recebido", "Diversos" ou "Outras receitas"
+//   5. categoria genérica da Pluggy ("Housing", "Services") ou tipo de operação do banco
+//   6. padrão: "Pix e transferências", "Pix recebido", "Diversos" ou "Outras receitas"
 
 export type Origem = 'regra' | 'sistema' | 'pluggy' | 'palavra' | 'padrao'
 
@@ -109,7 +110,7 @@ const PLUGGY_PARA_CAMINHO: [RegExp, string][] = [
   [/^clothing/, 'Compras/Roupas e calçados'],
   [/^electronics/, 'Compras/Eletrônicos'],
   [/^online shopping/, 'Compras/Compras online'],
-  [/^(kids and toys|sports goods|shopping)/, 'Compras/Utilidades'],
+  [/^(kids and toys|sports goods)/, 'Compras/Utilidades'],
   [/^pet supplies/, 'Pets/Pet shop'],
   [/^(video streaming|music streaming)/, 'Assinaturas e serviços/Streaming'],
   [/^digital services/, 'Assinaturas e serviços/Apps e software'],
@@ -136,6 +137,14 @@ const PLUGGY_PARA_CAMINHO: [RegExp, string][] = [
   [/^(investments|automatic investment|fixed income|mutual funds|variable income|pension|margin)/, 'Transferências/Aplicações e resgates'],
 ]
 
+// Categorias genéricas da Pluggy: só valem se as palavras-chave não acharem nada mais específico
+// (ex.: "Services" cobre de DAS-Simples Nacional a conveniência)
+const PLUGGY_GENERICA: [RegExp, string][] = [
+  [/^housing/, 'Moradia'],
+  [/^services/, 'Assinaturas e serviços'],
+  [/^shopping/, 'Compras/Utilidades'],
+]
+
 // Palavras-chave já normalizadas. As curtas (< 6 letras) casam com o início de uma palavra
 // ("uber" pega "DL*UBERRIDES"); as longas casam em qualquer ponto, porque as faturas grudam e
 // cortam os nomes ("PLANOBBEBIDAS", "FILIAL279DROGAL"). Vence a palavra-chave mais longa.
@@ -144,7 +153,7 @@ const PALAVRAS: [string, string[]][] = [
   ['Alimentação/Restaurantes', ['restaura', 'rest ', 'lanchon', 'lanches', 'burger', 'hamburgue', 'mcdonalds', 'mc donalds', 'outback', 'pizza', 'sushi', 'habibs', 'spoleto', 'giraffas', 'churrascaria', 'bobs', 'subway', 'coco bambu', 'madero', 'sorveteria', 'baguet']],
   ['Alimentação/Padaria e café', ['padaria', 'panificadora', 'cafe', 'cafeteria', 'starbucks', 'doceria', 'confeitaria']],
   ['Alimentação/Bares', ['bar e', 'boteco', 'bebidas', 'cervejaria', 'adega']],
-  ['Alimentação/Mercado', ['supermerc', 'mercado ', 'mercadinho', 'mercearia', 'carrefour', 'pao de acucar', 'assai', 'atacad', 'sams club', 'hortifruti', 'varejao', 'st marche', 'oba hortifruti', 'swift', 'sonda', 'emporio', 'hirota', 'quitanda', 'acougue', 'conveniencia', 'jau serve']],
+  ['Alimentação/Mercado', ['supermerc', 'mercado ', 'mercadinho', 'mercearia', 'carrefour', 'pao de acucar', 'assai', 'atacad', 'sams club', 'hortifruti', 'varejao', 'st marche', 'oba hortifruti', 'swift', 'sonda', 'emporio', 'hirota', 'quitanda', 'acougue', 'convenien', 'jau serve']],
   ['Transporte/App de transporte', ['uber', '99app', '99 pop', '99pop', '99 tecnologia', 'cabify', 'taxi']],
   ['Transporte/Transporte público', ['metro', 'cptm', 'sptrans', 'bilhete unico', 'viacao']],
   ['Transporte/Estacionamento e pedágio', ['estacionamento', 'estapar', 'zona azul', 'sem parar', 'semparar', 'conectcar', 'veloe', 'pedagio']],
@@ -152,7 +161,7 @@ const PALAVRAS: [string, string[]][] = [
   ['Saúde/Farmácia', ['drogasil', 'droga raia', 'raia', 'drogaria', 'drogal', 'farmacia', 'pague menos', 'panvel', 'drogao']],
   ['Saúde/Médicos e exames', ['hospital', 'laboratorio', 'clinica', 'fleury', 'dasa', 'medico', 'consultorio']],
   ['Saúde/Dentista', ['odonto']],
-  ['Saúde/Plano de saúde', ['unimed', 'sulamerica', 'bradesco saude', 'amil', 'hapvida']],
+  ['Saúde/Plano de saúde', ['unimed', 'sulamerica', 'sul america', 'bradesco saude', 'amil', 'hapvida']],
   ['Saúde/Academia e esportes', ['academia', 'gym', 'musclefit', 'smart fit', 'smartfit', 'bluefit', 'gympass', 'wellhub', 'totalpass']],
   ['Assinaturas e serviços/Streaming', ['netflix', 'spotify', 'amazon prime', 'prime video', 'amazonprime', 'disney', 'hbo', 'globoplay', 'youtube', 'deezer', 'paramount', 'crunchyroll', 'mubi', 'tidal']],
   ['Assinaturas e serviços/Apps e software', ['apple com', 'icloud', 'google one', 'google storage', 'chatgpt', 'openai', 'anthropic', 'claude ai', 'microsoft', 'adobe', 'canva', 'dropbox', 'patreon', 'linkedin', 'melimais']],
@@ -166,7 +175,8 @@ const PALAVRAS: [string, string[]][] = [
   ['Moradia/Água', ['sabesp', 'sanepar', 'semae', 'saae']],
   ['Moradia/Gás', ['comgas', 'naturgy', 'ultragaz', 'liquigas']],
   ['Moradia/Internet, TV e telefone', ['vivo', 'claro', 'tim celular', 'telefonica', 'desktop', 'sky ', 'oi fibra']],
-  ['Moradia/Manutenção e reforma', ['leroy', 'telhanorte', 'obramax', 'gmad', 'marmores', 'madeireira', 'construcao', 'material de constr']],
+  ['Moradia/Manutenção e reforma', ['leroy', 'telhanorte', 'obramax', 'gmad', 'marmores', 'madeireira', 'madeiras', 'ferragens', 'construcao', 'material de constr']],
+  ['Moradia/Aluguel e financiamento', ['habitacao', 'aluguel', 'imobiliaria']],
   ['Moradia/Condomínio', ['condominio']],
   ['Educação/Escola', ['escola', 'colegio']],
   ['Educação/Cursos e idiomas', ['curso', 'udemy', 'alura', 'faculdade', 'universidade', 'cultura inglesa', 'wizard', 'fisk', 'duolingo', 'coursera']],
@@ -181,10 +191,15 @@ const PALAVRAS: [string, string[]][] = [
   ['Impostos e taxas/Anuidade', ['anuidade']],
   ['Impostos e taxas/Juros e IOF', ['iof', 'juros', 'encargos', 'multa']],
   ['Impostos e taxas/Tarifas bancárias', ['tarifa', 'cesta de servicos', 'pacote de servicos']],
+  ['Impostos e taxas/Impostos', ['das simples', 'simples nacional', 'darf', 'receita fed', 'pref mun', 'prefeitura', 'municipio de', 'dgfin', 'iptu']],
 ]
 
-function porPalavraChave(descricao: string): string | null {
-  const n = normalizar(descricao)
+function porPalavraChave(tx: TransacaoParaCategorizar): string | null {
+  // no cartão, "PIX <nome> 04/10" é parcela de Pix no crédito
+  if (tx.accountType === 'CREDIT' && tx.type === 'DEBIT' && /^pix\b/.test(normalizar(tx.description))) {
+    return 'Empréstimos e financiamentos/Pix no crédito'
+  }
+  const n = normalizar(tx.description)
   const texto = ` ${n} ${n.replace(/[0-9]+/g, ' ').replace(/\s+/g, ' ')} `
   let melhor: { caminho: string; tamanho: number } | null = null
   for (const [caminho, palavras] of PALAVRAS) {
@@ -197,14 +212,27 @@ function porPalavraChave(descricao: string): string | null {
 }
 
 const RE_PAGAMENTO_FATURA = /\b(pagamento|pagto|pgto|pag) (de |da )?fatura\b|\bfatura (do )?cartao\b|\bpagamento (de |do )?cartao\b|\bpagamento recebido\b/
+// "Débito automático Fatura Itau Person Vs Infin": fatura + nome de banco/bandeira (e não "fatura Claro")
+const RE_FATURA_DE_CARTAO = /\bfatura\b.*\b(cartao|itau|person|personnalite|visa|master|mastercard|elo|nubank|santander|bradesco|inter|c6|porto)\b/
 
 function sistema(tx: TransacaoParaCategorizar, ctx: Contexto): string | null {
   const desc = normalizar(tx.description)
-  // no cartão: o crédito que quita a fatura; na conta: o débito que paga a fatura
-  if (tx.accountType === 'CREDIT' && tx.type === 'CREDIT' && (tx.operationType === 'PAGAMENTO_FATURA' || RE_PAGAMENTO_FATURA.test(desc))) {
+  const pluggy = normalizar(tx.pluggyCategory)
+  // no cartão: o crédito que quita a fatura ("PAGAMENTO COM SALDO", "PAGAMENTO DEBITO AUTOMATICO")
+  if (tx.accountType === 'CREDIT' && tx.type === 'CREDIT' && (
+    tx.operationType === 'PAGAMENTO_FATURA' || RE_PAGAMENTO_FATURA.test(desc) ||
+    /^(pagamento|pagto|pgto)\b/.test(desc) || /^transfer internal/.test(pluggy)
+  )) {
     return 'pagamento_fatura'
   }
-  if (tx.accountType === 'BANK' && tx.type === 'DEBIT' && RE_PAGAMENTO_FATURA.test(desc)) return 'pagamento_fatura'
+  // na conta: o débito que paga a fatura
+  if (tx.accountType === 'BANK' && tx.type === 'DEBIT' && (RE_PAGAMENTO_FATURA.test(desc) || RE_FATURA_DE_CARTAO.test(desc))) {
+    return 'pagamento_fatura'
+  }
+  // Pix no crédito: o gasto são as parcelas no cartão. Na conta, o "Crédito liberado para Pix" e o
+  // "Pix enviado com cartão" do mesmo dia só passam o dinheiro adiante — contá-los dobraria o gasto
+  if (tx.accountType === 'BANK' && tx.type === 'CREDIT' && /\bcredito liberado\b/.test(desc)) return 'pix_credito'
+  if (tx.accountType === 'BANK' && tx.type === 'DEBIT' && /^pix enviado com cartao\b/.test(desc)) return 'pix_credito'
   const doc = soDigitos(tx.counterpartDocument)
   if (doc && ctx.documentosProprios.has(doc)) return 'transferencia_propria'
   if (/^same person transfer/.test(normalizar(tx.pluggyCategory))) return 'transferencia_propria'
@@ -212,15 +240,24 @@ function sistema(tx: TransacaoParaCategorizar, ctx: Contexto): string | null {
   return null
 }
 
-function porPluggy(tx: TransacaoParaCategorizar): string | null {
+function porPluggy(tx: TransacaoParaCategorizar, tabela: [RegExp, string][]): string | null {
   const cat = normalizar(tx.pluggyCategory)
   if (!cat) return null
-  return PLUGGY_PARA_CAMINHO.find(([re]) => re.test(cat))?.[1] ?? null
+  return tabela.find(([re]) => re.test(cat))?.[1] ?? null
 }
 
+// Última tentativa antes do padrão: categoria genérica da Pluggy ou o tipo de operação do banco
+function porGenerico(tx: TransacaoParaCategorizar): string | null {
+  if (tx.type === 'DEBIT' && tx.operationType === 'OPERACAO_CREDITO') return 'Empréstimos e financiamentos/Empréstimos'
+  return porPluggy(tx, PLUGGY_GENERICA)
+}
+
+// Pix/TED só faz sentido na conta; no cartão a Pluggy às vezes chama compras parceladas de "Transfers"
 const ehTransferencia = (tx: TransacaoParaCategorizar) =>
-  /^(transfer|third party|same person)/.test(normalizar(tx.pluggyCategory)) ||
-  /^(PIX|TED|DOC|TRANSFERENCIA)/i.test(tx.operationType || '')
+  tx.accountType === 'BANK' && (
+    /^(transfer|third party|same person)/.test(normalizar(tx.pluggyCategory)) ||
+    /^(PIX|TED|DOC|TRANSFERENCIA)/i.test(tx.operationType || '')
+  )
 
 // Indexa as categorias uma vez e devolve a função que categoriza cada transação
 export function criarCategorizador(ctx: Contexto) {
@@ -237,13 +274,17 @@ function categorizarComIndice(tx: TransacaoParaCategorizar, ctx: Contexto, idx: 
   const idSistema = chaveSistema && idx.sistema(chaveSistema)
   if (idSistema) return { categoryId: idSistema, origem: 'sistema' }
 
-  const caminhoPluggy = porPluggy(tx)
+  const caminhoPluggy = porPluggy(tx, PLUGGY_PARA_CAMINHO)
   const idPluggy = caminhoPluggy && idx.caminho(caminhoPluggy)
   if (idPluggy) return { categoryId: idPluggy, origem: 'pluggy' }
 
-  const caminhoPalavra = porPalavraChave(tx.description)
+  const caminhoPalavra = porPalavraChave(tx)
   const idPalavra = caminhoPalavra && idx.caminho(caminhoPalavra)
   if (idPalavra) return { categoryId: idPalavra, origem: 'palavra' }
+
+  const caminhoGenerico = porGenerico(tx)
+  const idGenerico = caminhoGenerico && idx.caminho(caminhoGenerico)
+  if (idGenerico) return { categoryId: idGenerico, origem: 'pluggy' }
 
   const entrada = tx.type === 'CREDIT'
   const padrao = ehTransferencia(tx)

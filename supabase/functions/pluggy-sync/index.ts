@@ -3,7 +3,7 @@
 // (pg_cron, com o header x-cron-secret guardado no Vault).
 
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2'
-import { Pluggy, type PluggyAccount } from './pluggy.ts'
+import { ErroPluggy, Pluggy, type PluggyAccount, type PluggyItem } from './pluggy.ts'
 import { contaParaLinha, transacaoParaLinha, type LinhaTransacao } from './transformar.ts'
 import { criarCategorizador, normalizar, type Categoria } from './categorizacao.ts'
 
@@ -75,25 +75,24 @@ async function sincronizar(db: SupabaseClient) {
   }
   const pluggy = await Pluggy.conectar(cred.client_id, cred.client_secret)
   const agora = new Date()
-  const stats = { conexoes: 0, contas: 0, novas: 0, atualizadas: 0, removidasPendentes: 0 }
+  const stats = { conexoes: 0, contas: 0, novas: 0, atualizadas: 0, removidasPendentes: 0, recategorizadas: 0 }
 
   // --- conexões e contas ---
-  const itens = await pluggy.itens()
+  const itens = await descobrirConexoes(db, pluggy, agora)
+  if (!itens.length) throw new Error('Nenhuma conexão encontrada. Cadastre o Item ID da conexão MeuPluggy em Contas.')
   stats.conexoes = itens.length
-  if (itens.length) {
-    await upsert(db, 'pluggy_items', itens.map(i => ({
-      id: i.id,
-      connector_name: i.connector?.name ?? null,
-      connector_image_url: i.connector?.imageUrl ?? null,
-      connector_color: i.connector?.primaryColor ?? null,
-      status: i.status,
-      execution_status: i.executionStatus,
-      last_updated_at: i.lastUpdatedAt,
-      consent_expires_at: i.consentExpiresAt ?? null,
-      synced_at: agora.toISOString(),
-      updated_at: agora.toISOString(),
-    })))
-  }
+  await upsert(db, 'pluggy_items', itens.map(i => ({
+    id: i.id,
+    connector_name: i.connector?.name ?? null,
+    connector_image_url: i.connector?.imageUrl ?? null,
+    connector_color: i.connector?.primaryColor ?? null,
+    status: i.status,
+    execution_status: i.executionStatus,
+    last_updated_at: i.lastUpdatedAt,
+    consent_expires_at: i.consentExpiresAt ?? null,
+    synced_at: agora.toISOString(),
+    updated_at: agora.toISOString(),
+  })))
 
   const contas: PluggyAccount[] = []
   for (const item of itens) contas.push(...await pluggy.contas(item.id))
@@ -164,12 +163,76 @@ async function sincronizar(db: SupabaseClient) {
     }
   }
 
+  stats.recategorizadas = await recategorizarAutomaticas(db, categorizar)
+
   for (const [key, n] of usoDeRegras) {
     const { data } = await db.from('category_rules').select('hits').eq('key', key).single()
     if (data) await db.from('category_rules').update({ hits: data.hits + n }).eq('key', key)
   }
 
   return stats
+}
+
+// A categorização automática do histórico é refeita a cada sincronização: assim melhorias nas
+// regras valem também para transações antigas. Nunca mexe no que o usuário escolheu à mão
+// ('manual') nem no que veio de uma regra que ele ensinou ('regra').
+const ORIGENS_AUTOMATICAS = ['padrao', 'sistema', 'pluggy', 'palavra']
+
+async function recategorizarAutomaticas(db: SupabaseClient, categorizar: ReturnType<typeof criarCategorizador>) {
+  const automaticas: { id: string; description: string; type: 'DEBIT' | 'CREDIT'; operation_type: string | null; pluggy_category: string | null; merchant_cnpj: string | null; counterpart_document: string | null; category_id: string | null; category_source: string; accounts: { type: 'BANK' | 'CREDIT' } }[] = []
+  for (let de = 0; ; de += 1000) {
+    const { data } = await db.from('transactions')
+      .select('id, description, type, operation_type, pluggy_category, merchant_cnpj, counterpart_document, category_id, category_source, accounts!inner(type)')
+      .in('category_source', ORIGENS_AUTOMATICAS).order('id').range(de, de + 999)
+    automaticas.push(...(data ?? []))
+    if (!data || data.length < 1000) break
+  }
+
+  const grupos = new Map<string, string[]>()
+  for (const t of automaticas) {
+    const r = categorizar({
+      description: t.description,
+      type: t.type,
+      accountType: t.accounts.type,
+      operationType: t.operation_type,
+      pluggyCategory: t.pluggy_category,
+      merchantCnpj: t.merchant_cnpj,
+      counterpartDocument: t.counterpart_document,
+    })
+    if (!r.categoryId || (r.categoryId === t.category_id && r.origem === t.category_source)) continue
+    const chave = `${r.categoryId}|${r.origem}`
+    grupos.set(chave, [...(grupos.get(chave) ?? []), t.id])
+  }
+
+  let total = 0
+  for (const [chave, ids] of grupos) {
+    const [categoryId, origem] = chave.split('|')
+    for (let i = 0; i < ids.length; i += 200) {
+      const { error } = await db.from('transactions').update({ category_id: categoryId, category_source: origem }).in('id', ids.slice(i, i + 200))
+      if (error) throw new Error(`Erro recategorizando: ${error.message}`)
+    }
+    total += ids.length
+  }
+  return total
+}
+
+// Usa a listagem da Pluggy quando liberada; senão, as conexões cadastradas no app pelo Item ID.
+// Um ID que a Pluggy não reconhece é marcado na tela em vez de derrubar a sincronização.
+async function descobrirConexoes(db: SupabaseClient, pluggy: Pluggy, agora: Date): Promise<PluggyItem[]> {
+  const listados = await pluggy.itens()
+  if (listados) return listados
+
+  const { data: cadastrados } = await db.from('pluggy_items').select('id')
+  const itens: PluggyItem[] = []
+  for (const { id } of cadastrados ?? []) {
+    try {
+      itens.push(await pluggy.item(id))
+    } catch (e) {
+      if (!(e instanceof ErroPluggy) || ![400, 404].includes(e.status)) throw e
+      await db.from('pluggy_items').update({ status: 'NAO_ENCONTRADA', synced_at: agora.toISOString() }).eq('id', id)
+    }
+  }
+  return itens
 }
 
 async function upsert(db: SupabaseClient, tabela: string, linhas: Record<string, unknown>[]) {

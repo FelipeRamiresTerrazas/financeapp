@@ -26,6 +26,7 @@ function ConexaoPluggy({ aviso }: { aviso: (m: string) => void }) {
   const [clientSecret, setClientSecret] = useState('')
   const [sincronizando, setSincronizando] = useState(false)
   const [historico, setHistorico] = useState<Sincronizacao[]>([])
+  const [novoItem, setNovoItem] = useState('')
 
   const carregar = useCallback(async () => {
     const [{ data: ok }, { data: runs }] = await Promise.all([
@@ -59,6 +60,25 @@ function ConexaoPluggy({ aviso }: { aviso: (m: string) => void }) {
       return aviso(`Erro na sincronização: ${msg}`)
     }
     aviso(`Sincronizado: ${data.stats.novas} transações novas`)
+  }
+
+  // A Pluggy não deixa listar as conexões no plano gratuito: o Item ID é cadastrado aqui
+  async function cadastrarConexao() {
+    const id = novoItem.trim()
+    if (!/^[0-9a-f-]{36}$/i.test(id)) return aviso('O Item ID tem o formato 01234567-89ab-cdef-0123-456789abcdef')
+    const { error } = await supabase.from('pluggy_items').insert({ id, connector_name: 'Nova conexão (sincronize)', status: 'PENDENTE' })
+    if (error) return aviso(error.code === '23505' ? 'Essa conexão já está cadastrada' : `Erro: ${error.message}`)
+    setNovoItem('')
+    await recarregar()
+    aviso('Conexão cadastrada — agora clique em Sincronizar agora')
+  }
+
+  async function removerConexao(id: string, nome: string | null) {
+    if (!confirm(`Remover "${nome}" do app? As contas e transações dessa conexão serão apagadas daqui (nada muda no banco nem no Meu Pluggy).`)) return
+    const { error } = await supabase.from('pluggy_items').delete().eq('id', id)
+    if (error) return aviso(`Erro: ${error.message}`)
+    await recarregar()
+    aviso('Conexão removida')
   }
 
   const ultima = historico[0]
@@ -106,6 +126,15 @@ function ConexaoPluggy({ aviso }: { aviso: (m: string) => void }) {
             </Botao>
           </div>
         )}
+        {configurado && !editando && (
+          <div className="border-t border-line pt-4">
+            <label className="rotulo" htmlFor="item-id">Cadastrar conexão (Item ID da conexão MeuPluggy no Dashboard da Pluggy)</label>
+            <div className="flex gap-2">
+              <input id="item-id" className="campo font-mono text-xs" placeholder="01234567-89ab-cdef-0123-456789abcdef" value={novoItem} onChange={e => setNovoItem(e.target.value)} />
+              <Botao variante="secundario" onClick={cadastrarConexao}><Plus size={15} /> Cadastrar</Botao>
+            </div>
+          </div>
+        )}
       </Painel>
 
       {conexoes.length > 0 && (
@@ -113,6 +142,9 @@ function ConexaoPluggy({ aviso }: { aviso: (m: string) => void }) {
           {conexoes.map(c => {
             const ok = c.status === 'UPDATED'
             const consentimentoAcaba = c.consent_expires_at && new Date(c.consent_expires_at).getTime() - Date.now() < 30 * 86_400_000
+            const situacao = c.status === 'NAO_ENCONTRADA'
+              ? 'A Pluggy não encontrou esta conexão — confira o Item ID'
+              : c.status === 'PENDENTE' ? 'Aguardando a primeira sincronização' : `Status: ${c.status} ${c.execution_status ?? ''}`
             return (
               <Painel key={c.id} className="flex items-center gap-3 p-3">
                 {c.connector_image_url
@@ -120,11 +152,14 @@ function ConexaoPluggy({ aviso }: { aviso: (m: string) => void }) {
                   : <div className="rounded-xl bg-surface-2 p-2 text-fg-2"><Landmark size={20} /></div>}
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-fg">{c.connector_name}</p>
-                  <p className={`text-xs ${ok ? 'text-muted' : 'text-negativo'}`}>
-                    {ok ? `Dados do banco de ${dataHora(c.last_updated_at)}` : `Status: ${c.status} ${c.execution_status ?? ''}`}
+                  <p className={`text-xs ${ok || c.status === 'PENDENTE' ? 'text-muted' : 'text-negativo'}`}>
+                    {ok ? `Dados do banco de ${dataHora(c.last_updated_at)}` : situacao}
                   </p>
                   {consentimentoAcaba && <p className="text-xs text-negativo">Consentimento vence em {dataHora(c.consent_expires_at)} — renove no Meu Pluggy</p>}
                 </div>
+                <button onClick={() => removerConexao(c.id, c.connector_name)} className="rounded-lg p-2 text-subtle hover:bg-negativo/10 hover:text-negativo" title="Remover do app">
+                  <Trash2 size={15} />
+                </button>
               </Painel>
             )
           })}
@@ -145,10 +180,10 @@ function Passos() {
         No <a className={link} href="https://dashboard.pluggy.ai" target="_blank" rel="noreferrer">Dashboard da Pluggy <ExternalLink size={12} /></a>, crie uma aplicação e copie o <strong>Client ID</strong> e o <strong>Client Secret</strong>.
       </li>
       <li>
-        Ainda no Dashboard, clique em <strong>"Ir para Demo"</strong>, escolha o conector <strong>MeuPluggy</strong>, entre com a conta do passo 1 e autorize.
+        Ainda no Dashboard, crie uma conexão com o conector <strong>MeuPluggy</strong> (não escolha o banco direto nem "Sandbox"), entre com a conta do passo 1 e autorize. Copie o <strong>Item ID</strong> da conexão criada.
         <span className="block text-xs text-muted">Faça isso nos 15 dias de teste do Dashboard: depois, o que já foi conectado continua funcionando de graça, mas não dá para adicionar.</span>
       </li>
-      <li>Cole as credenciais abaixo e clique em Sincronizar.</li>
+      <li>Cole as credenciais abaixo; depois, cadastre o Item ID e clique em Sincronizar.</li>
     </ol>
   )
 }
