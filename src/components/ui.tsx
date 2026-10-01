@@ -27,8 +27,8 @@ export function Icone({ nome, size = 18, className }: { nome: string | null | un
   return <I size={size} className={className} />
 }
 
-export function Painel({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <div className={`rounded-3xl border border-line bg-surface ${className}`}>{children}</div>
+export function Painel({ children, className = '', id }: { children: ReactNode; className?: string; id?: string }) {
+  return <div id={id} className={`rounded-3xl border border-line bg-surface ${className}`}>{children}</div>
 }
 
 export function Titulo({ titulo, subtitulo, acao }: { titulo: string; subtitulo?: string; acao?: ReactNode }) {
