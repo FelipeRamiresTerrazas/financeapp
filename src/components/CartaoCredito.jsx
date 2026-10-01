@@ -16,36 +16,36 @@ function Modal({ onSave, onClose, showObservacao }) {
     onSave({ ...form, valor: parseFloat(form.valor), mes: parseInt(form.mes), ano: parseInt(form.ano) })
   }
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-end md:items-center justify-center p-4">
-      <div className="bg-white rounded-2xl w-full max-w-md shadow-xl p-5">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-4">
+      <div className="bg-surface rounded-2xl w-full max-w-md p-5">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="font-semibold text-gray-900">Nova Fatura</h3>
-          <button onClick={onClose}><X size={18} className="text-gray-400" /></button>
+          <h3 className="font-semibold text-fg">Nova Fatura</h3>
+          <button onClick={onClose}><X size={18} className="text-muted" /></button>
         </div>
         <div className="space-y-3">
           <div>
-            <label className="text-xs font-medium text-gray-600 mb-1 block">Conta / Banco</label>
+            <label className="text-xs font-medium text-fg-2 mb-1 block">Conta / Banco</label>
             <input
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
               value={form.conta}
               onChange={e => setForm(f => ({ ...f, conta: e.target.value }))}
               placeholder="Ex: Itaú, Porto, Santander..."
             />
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-600 mb-1 block">Valor (R$)</label>
+            <label className="text-xs font-medium text-fg-2 mb-1 block">Valor (R$)</label>
             <input
               type="number"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
               value={form.valor}
               onChange={e => setForm(f => ({ ...f, valor: e.target.value }))}
             />
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-xs font-medium text-gray-600 mb-1 block">Mês</label>
+              <label className="text-xs font-medium text-fg-2 mb-1 block">Mês</label>
               <select
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                 value={form.mes}
                 onChange={e => setForm(f => ({ ...f, mes: e.target.value }))}
               >
@@ -53,10 +53,10 @@ function Modal({ onSave, onClose, showObservacao }) {
               </select>
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-600 mb-1 block">Ano</label>
+              <label className="text-xs font-medium text-fg-2 mb-1 block">Ano</label>
               <input
                 type="number"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                 value={form.ano}
                 onChange={e => setForm(f => ({ ...f, ano: e.target.value }))}
               />
@@ -64,9 +64,9 @@ function Modal({ onSave, onClose, showObservacao }) {
           </div>
           {showObservacao && (
             <div>
-              <label className="text-xs font-medium text-gray-600 mb-1 block">Observação</label>
+              <label className="text-xs font-medium text-fg-2 mb-1 block">Observação</label>
               <input
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                 value={form.observacao}
                 onChange={e => setForm(f => ({ ...f, observacao: e.target.value }))}
                 placeholder="Opcional"
@@ -74,13 +74,13 @@ function Modal({ onSave, onClose, showObservacao }) {
             </div>
           )}
           <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" checked={form.pago} onChange={e => setForm(f => ({ ...f, pago: e.target.checked }))} className="w-4 h-4 accent-blue-600" />
-            <span className="text-sm text-gray-700">Já pago</span>
+            <input type="checkbox" checked={form.pago} onChange={e => setForm(f => ({ ...f, pago: e.target.checked }))} className="w-4 h-4 accent-brand" />
+            <span className="text-sm text-fg-2">Já pago</span>
           </label>
         </div>
         <div className="flex gap-2 mt-5">
-          <button onClick={onClose} className="flex-1 py-2 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50">Cancelar</button>
-          <button onClick={handleSave} className="flex-1 py-2 bg-blue-600 rounded-xl text-sm font-medium text-white hover:bg-blue-700">Salvar</button>
+          <button onClick={onClose} className="flex-1 py-2 border border-line rounded-xl text-sm font-medium text-fg-2 hover:bg-surface-2">Cancelar</button>
+          <button onClick={handleSave} className="flex-1 py-2 bg-brand rounded-xl text-sm font-medium text-on-brand hover:bg-brand-strong">Salvar</button>
         </div>
       </div>
     </div>
@@ -129,12 +129,12 @@ export default function CartaoCredito({ items, title, showObservacao, onChange }
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="hidden md:block">
-          <h2 className="text-xl font-bold text-gray-900">{title}</h2>
-          <p className="text-sm text-gray-500">Faturas por mês e conta</p>
+          <h2 className="text-xl font-bold text-fg">{title}</h2>
+          <p className="text-sm text-muted">Faturas por mês e conta</p>
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="flex items-center gap-1.5 bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-blue-700"
+          className="flex items-center gap-1.5 bg-brand text-on-brand px-4 py-2 rounded-xl text-sm font-medium hover:bg-brand-strong"
         >
           <Plus size={16} /> Nova Fatura
         </button>
@@ -142,13 +142,13 @@ export default function CartaoCredito({ items, title, showObservacao, onChange }
 
       {/* Totals */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="bg-blue-50 rounded-xl p-3">
-          <p className="text-xs font-medium text-blue-600">Total Histórico</p>
-          <p className="text-lg font-bold text-blue-800">{fmt(totalGeral)}</p>
+        <div className="bg-brand/10 rounded-xl p-3">
+          <p className="text-xs font-medium text-brand">Total Histórico</p>
+          <p className="text-lg font-bold text-brand">{fmt(totalGeral)}</p>
         </div>
-        <div className="bg-red-50 rounded-xl p-3">
-          <p className="text-xs font-medium text-red-600">Pendente</p>
-          <p className="text-lg font-bold text-red-800">{fmt(totalPendente)}</p>
+        <div className="bg-red-500/10 rounded-xl p-3">
+          <p className="text-xs font-medium text-red-400">Pendente</p>
+          <p className="text-lg font-bold text-red-300">{fmt(totalPendente)}</p>
         </div>
       </div>
 
@@ -160,7 +160,7 @@ export default function CartaoCredito({ items, title, showObservacao, onChange }
               key={c}
               onClick={() => setFiltroConta(c)}
               className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
-                filtroConta === c ? 'bg-blue-600 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:border-blue-400'
+                filtroConta === c ? 'bg-brand text-on-brand' : 'bg-surface border border-line text-fg-2 hover:border-brand'
               }`}
             >
               {c}
@@ -173,7 +173,7 @@ export default function CartaoCredito({ items, title, showObservacao, onChange }
               key={a}
               onClick={() => setFiltroAno(a)}
               className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
-                filtroAno === a ? 'bg-gray-800 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-400'
+                filtroAno === a ? 'bg-fg text-canvas' : 'bg-surface border border-line text-fg-2 hover:border-muted'
               }`}
             >
               {a}
@@ -183,7 +183,7 @@ export default function CartaoCredito({ items, title, showObservacao, onChange }
       </div>
 
       {filtered.length === 0 && (
-        <p className="text-center text-gray-400 py-8 text-sm">Nenhuma fatura encontrada.</p>
+        <p className="text-center text-muted py-8 text-sm">Nenhuma fatura encontrada.</p>
       )}
 
       {/* By month */}
@@ -196,26 +196,26 @@ export default function CartaoCredito({ items, title, showObservacao, onChange }
           return (
             <div key={key}>
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-semibold text-gray-600 flex items-center gap-2">
+                <h3 className="text-sm font-semibold text-fg-2 flex items-center gap-2">
                   {MESES_COMPLETOS[parseInt(mes) - 1]} / {ano}
-                  {allPaid && <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">✓ Pago</span>}
+                  {allPaid && <span className="text-xs bg-green-500/15 text-green-300 px-2 py-0.5 rounded-full font-medium">✓ Pago</span>}
                 </h3>
-                <span className="text-sm font-bold text-gray-800">{fmt(total)}</span>
+                <span className="text-sm font-bold text-fg">{fmt(total)}</span>
               </div>
               <div className="space-y-2">
                 {faturas.map(f => (
-                  <div key={f.id} className={`flex items-center gap-3 p-3 rounded-xl border ${f.pago ? 'bg-green-50 border-green-100' : 'bg-white border-gray-100'}`}>
+                  <div key={f.id} className={`flex items-center gap-3 p-3 rounded-xl border ${f.pago ? 'bg-green-500/10 border-green-500/20' : 'bg-surface border-line'}`}>
                     <button onClick={() => togglePago(f.id)} className="shrink-0">
-                      {f.pago ? <CheckCircle2 size={20} className="text-green-500" /> : <Circle size={20} className="text-gray-300" />}
+                      {f.pago ? <CheckCircle2 size={20} className="text-green-500" /> : <Circle size={20} className="text-subtle" />}
                     </button>
                     <div className="flex-1 min-w-0">
-                      <span className={`text-sm font-medium ${f.pago ? 'text-gray-400 line-through' : 'text-gray-800'}`}>{f.conta}</span>
+                      <span className={`text-sm font-medium ${f.pago ? 'text-muted line-through' : 'text-fg'}`}>{f.conta}</span>
                       {showObservacao && f.observacao && (
-                        <p className="text-xs text-gray-400 truncate">{f.observacao}</p>
+                        <p className="text-xs text-muted truncate">{f.observacao}</p>
                       )}
                     </div>
-                    <span className="text-sm font-bold text-gray-900 shrink-0">{fmt(f.valor)}</span>
-                    <button onClick={() => deleteItem(f.id)} className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg">
+                    <span className="text-sm font-bold text-fg shrink-0">{fmt(f.valor)}</span>
+                    <button onClick={() => deleteItem(f.id)} className="p-1.5 text-subtle hover:text-red-500 hover:bg-red-500/10 rounded-lg">
                       <Trash2 size={14} />
                     </button>
                   </div>

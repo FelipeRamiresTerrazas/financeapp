@@ -3,8 +3,18 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    color-scheme: dark;
+  }
   body {
-    @apply bg-gray-50 text-gray-900;
+    @apply bg-canvas text-fg antialiased;
+    font-feature-settings: 'tnum' 1, 'cv11' 1;
+  }
+  input, select, textarea {
+    @apply bg-surface-2 text-fg placeholder:text-subtle;
+  }
+  select option {
+    @apply bg-surface-2 text-fg;
   }
 }
 

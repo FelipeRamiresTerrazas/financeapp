@@ -18,17 +18,17 @@ function Modal({ onSave, onClose }) {
     onSave({ ...form, valor: parseFloat(form.valor), mes: parseInt(form.mes), ano: parseInt(form.ano) })
   }
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-end md:items-center justify-center p-4">
-      <div className="bg-white rounded-2xl w-full max-w-md shadow-xl p-5">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-4">
+      <div className="bg-surface rounded-2xl w-full max-w-md p-5">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="font-semibold text-gray-900">Nova Parcela</h3>
-          <button onClick={onClose}><X size={18} className="text-gray-400" /></button>
+          <h3 className="font-semibold text-fg">Nova Parcela</h3>
+          <button onClick={onClose}><X size={18} className="text-muted" /></button>
         </div>
         <div className="space-y-3">
           <div>
-            <label className="text-xs font-medium text-gray-600 mb-1 block">Descrição / Credor</label>
+            <label className="text-xs font-medium text-fg-2 mb-1 block">Descrição / Credor</label>
             <input
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
               value={form.desc}
               onChange={e => setForm(f => ({ ...f, desc: e.target.value }))}
               placeholder="Ex: Entrada Casa, Creditas..."
@@ -39,19 +39,19 @@ function Modal({ onSave, onClose }) {
             </datalist>
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-600 mb-1 block">Valor (R$)</label>
+            <label className="text-xs font-medium text-fg-2 mb-1 block">Valor (R$)</label>
             <input
               type="number"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
               value={form.valor}
               onChange={e => setForm(f => ({ ...f, valor: e.target.value }))}
             />
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-xs font-medium text-gray-600 mb-1 block">Mês</label>
+              <label className="text-xs font-medium text-fg-2 mb-1 block">Mês</label>
               <select
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                 value={form.mes}
                 onChange={e => setForm(f => ({ ...f, mes: e.target.value }))}
               >
@@ -59,23 +59,23 @@ function Modal({ onSave, onClose }) {
               </select>
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-600 mb-1 block">Ano</label>
+              <label className="text-xs font-medium text-fg-2 mb-1 block">Ano</label>
               <input
                 type="number"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                 value={form.ano}
                 onChange={e => setForm(f => ({ ...f, ano: e.target.value }))}
               />
             </div>
           </div>
           <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" checked={form.pago} onChange={e => setForm(f => ({ ...f, pago: e.target.checked }))} className="w-4 h-4 accent-blue-600" />
-            <span className="text-sm text-gray-700">Já pago</span>
+            <input type="checkbox" checked={form.pago} onChange={e => setForm(f => ({ ...f, pago: e.target.checked }))} className="w-4 h-4 accent-brand" />
+            <span className="text-sm text-fg-2">Já pago</span>
           </label>
         </div>
         <div className="flex gap-2 mt-5">
-          <button onClick={onClose} className="flex-1 py-2 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50">Cancelar</button>
-          <button onClick={handleSave} className="flex-1 py-2 bg-blue-600 rounded-xl text-sm font-medium text-white hover:bg-blue-700">Salvar</button>
+          <button onClick={onClose} className="flex-1 py-2 border border-line rounded-xl text-sm font-medium text-fg-2 hover:bg-surface-2">Cancelar</button>
+          <button onClick={handleSave} className="flex-1 py-2 bg-brand rounded-xl text-sm font-medium text-on-brand hover:bg-brand-strong">Salvar</button>
         </div>
       </div>
     </div>
@@ -119,12 +119,12 @@ export default function Emprestimos({ items, onChange }) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="hidden md:block">
-          <h2 className="text-xl font-bold text-gray-900">Empréstimos</h2>
-          <p className="text-sm text-gray-500">Controle de parcelas e financiamentos</p>
+          <h2 className="text-xl font-bold text-fg">Empréstimos</h2>
+          <p className="text-sm text-muted">Controle de parcelas e financiamentos</p>
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="flex items-center gap-1.5 bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-blue-700"
+          className="flex items-center gap-1.5 bg-brand text-on-brand px-4 py-2 rounded-xl text-sm font-medium hover:bg-brand-strong"
         >
           <Plus size={16} /> Nova Parcela
         </button>
@@ -133,23 +133,23 @@ export default function Emprestimos({ items, onChange }) {
       {/* Summary per creditor */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {Object.entries(byDesc).map(([desc, info]) => (
-          <div key={desc} className="bg-white rounded-xl border border-gray-100 p-3 shadow-sm">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{desc}</p>
-            <p className="text-lg font-bold text-gray-900 mt-1">{fmt(info.aberto)}</p>
-            <p className="text-xs text-gray-400">em aberto · {info.parcelas} parcelas</p>
+          <div key={desc} className="bg-surface rounded-xl border border-line p-3 ">
+            <p className="text-xs font-semibold text-muted uppercase tracking-wide">{desc}</p>
+            <p className="text-lg font-bold text-fg mt-1">{fmt(info.aberto)}</p>
+            <p className="text-xs text-muted">em aberto · {info.parcelas} parcelas</p>
           </div>
         ))}
       </div>
 
       {/* Totals */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="bg-orange-50 rounded-xl p-3">
-          <p className="text-xs font-medium text-orange-600">Total em Aberto</p>
-          <p className="text-lg font-bold text-orange-800">{fmt(totalAberto)}</p>
+        <div className="bg-orange-500/10 rounded-xl p-3">
+          <p className="text-xs font-medium text-orange-400">Total em Aberto</p>
+          <p className="text-lg font-bold text-orange-300">{fmt(totalAberto)}</p>
         </div>
-        <div className="bg-green-50 rounded-xl p-3">
-          <p className="text-xs font-medium text-green-600">Total Pago</p>
-          <p className="text-lg font-bold text-green-800">{fmt(totalPago)}</p>
+        <div className="bg-green-500/10 rounded-xl p-3">
+          <p className="text-xs font-medium text-green-400">Total Pago</p>
+          <p className="text-lg font-bold text-green-300">{fmt(totalPago)}</p>
         </div>
       </div>
 
@@ -160,7 +160,7 @@ export default function Emprestimos({ items, onChange }) {
             key={g}
             onClick={() => setFiltroGrupo(g)}
             className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
-              filtroGrupo === g ? 'bg-blue-600 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:border-blue-400'
+              filtroGrupo === g ? 'bg-brand text-on-brand' : 'bg-surface border border-line text-fg-2 hover:border-brand'
             }`}
           >
             {g}
@@ -184,20 +184,20 @@ export default function Emprestimos({ items, onChange }) {
             return (
               <div key={key}>
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-semibold text-gray-600">
+                  <h3 className="text-sm font-semibold text-fg-2">
                     {MESES_COMPLETOS[parseInt(mes) - 1]} / {ano}
                   </h3>
-                  <span className="text-sm font-bold text-gray-800">{fmt(total)}</span>
+                  <span className="text-sm font-bold text-fg">{fmt(total)}</span>
                 </div>
                 <div className="space-y-2">
                   {parcelas.map(p => (
-                    <div key={p.id} className={`flex items-center gap-3 p-3 rounded-xl border ${p.pago ? 'bg-green-50 border-green-100' : 'bg-white border-gray-100'}`}>
+                    <div key={p.id} className={`flex items-center gap-3 p-3 rounded-xl border ${p.pago ? 'bg-green-500/10 border-green-500/20' : 'bg-surface border-line'}`}>
                       <button onClick={() => togglePago(p.id)} className="shrink-0">
-                        {p.pago ? <CheckCircle2 size={20} className="text-green-500" /> : <Circle size={20} className="text-gray-300" />}
+                        {p.pago ? <CheckCircle2 size={20} className="text-green-500" /> : <Circle size={20} className="text-subtle" />}
                       </button>
-                      <span className={`flex-1 text-sm font-medium ${p.pago ? 'text-gray-400 line-through' : 'text-gray-800'}`}>{p.desc}</span>
-                      <span className="text-sm font-bold text-gray-900 shrink-0">{fmt(p.valor)}</span>
-                      <button onClick={() => deleteItem(p.id)} className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg">
+                      <span className={`flex-1 text-sm font-medium ${p.pago ? 'text-muted line-through' : 'text-fg'}`}>{p.desc}</span>
+                      <span className="text-sm font-bold text-fg shrink-0">{fmt(p.valor)}</span>
+                      <button onClick={() => deleteItem(p.id)} className="p-1.5 text-subtle hover:text-red-500 hover:bg-red-500/10 rounded-lg">
                         <Trash2 size={14} />
                       </button>
                     </div>

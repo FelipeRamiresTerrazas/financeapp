@@ -8,30 +8,30 @@ function fmt(v) {
 function ItemRow({ item, onTogglePago, onEdit, onDelete }) {
   return (
     <div className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${
-      item.pago ? 'bg-green-50 border-green-100' : 'bg-white border-gray-100'
+      item.pago ? 'bg-green-500/10 border-green-500/20' : 'bg-surface border-line'
     }`}>
       <button onClick={() => onTogglePago(item.id)} className="shrink-0">
         {item.pago
           ? <CheckCircle2 size={20} className="text-green-500" />
-          : <Circle size={20} className="text-gray-300" />
+          : <Circle size={20} className="text-subtle" />
         }
       </button>
       <div className="flex-1 min-w-0">
-        <p className={`text-sm font-medium truncate ${item.pago ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
+        <p className={`text-sm font-medium truncate ${item.pago ? 'text-muted line-through' : 'text-fg'}`}>
           {item.descricao}
         </p>
         <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
-          item.tipoPagamento === 'saldo' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
+          item.tipoPagamento === 'saldo' ? 'bg-brand/10 text-brand' : 'bg-purple-500/15 text-purple-300'
         }`}>
           {item.tipoPagamento === 'saldo' ? 'Saldo' : 'Crédito'}
         </span>
       </div>
-      <span className="text-sm font-bold text-gray-900 shrink-0">{fmt(item.valor)}</span>
+      <span className="text-sm font-bold text-fg shrink-0">{fmt(item.valor)}</span>
       <div className="flex gap-1 shrink-0">
-        <button onClick={() => onEdit(item)} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg">
+        <button onClick={() => onEdit(item)} className="p-1.5 text-muted hover:text-brand hover:bg-brand/10 rounded-lg">
           <Pencil size={14} />
         </button>
-        <button onClick={() => onDelete(item.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg">
+        <button onClick={() => onDelete(item.id)} className="p-1.5 text-muted hover:text-red-400 hover:bg-red-500/10 rounded-lg">
           <Trash2 size={14} />
         </button>
       </div>
@@ -46,36 +46,36 @@ function Modal({ item, onSave, onClose }) {
     onSave({ ...form, valor: parseFloat(form.valor) })
   }
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-end md:items-center justify-center p-4">
-      <div className="bg-white rounded-2xl w-full max-w-md shadow-xl p-5">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-4">
+      <div className="bg-surface rounded-2xl w-full max-w-md p-5">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="font-semibold text-gray-900">{item ? 'Editar Item' : 'Novo Item'}</h3>
-          <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600"><X size={18} /></button>
+          <h3 className="font-semibold text-fg">{item ? 'Editar Item' : 'Novo Item'}</h3>
+          <button onClick={onClose} className="p-1 text-muted hover:text-fg-2"><X size={18} /></button>
         </div>
         <div className="space-y-3">
           <div>
-            <label className="text-xs font-medium text-gray-600 mb-1 block">Descrição</label>
+            <label className="text-xs font-medium text-fg-2 mb-1 block">Descrição</label>
             <input
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
               value={form.descricao}
               onChange={e => setForm(f => ({ ...f, descricao: e.target.value }))}
               placeholder="Ex: Escola, Aluguel..."
             />
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-600 mb-1 block">Valor (R$)</label>
+            <label className="text-xs font-medium text-fg-2 mb-1 block">Valor (R$)</label>
             <input
               type="number"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
               value={form.valor}
               onChange={e => setForm(f => ({ ...f, valor: e.target.value }))}
               placeholder="0,00"
             />
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-600 mb-1 block">Tipo de Pagamento</label>
+            <label className="text-xs font-medium text-fg-2 mb-1 block">Tipo de Pagamento</label>
             <select
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
               value={form.tipoPagamento}
               onChange={e => setForm(f => ({ ...f, tipoPagamento: e.target.value }))}
             >
@@ -88,16 +88,16 @@ function Modal({ item, onSave, onClose }) {
               type="checkbox"
               checked={form.pago}
               onChange={e => setForm(f => ({ ...f, pago: e.target.checked }))}
-              className="w-4 h-4 accent-blue-600"
+              className="w-4 h-4 accent-brand"
             />
-            <span className="text-sm text-gray-700">Já pago</span>
+            <span className="text-sm text-fg-2">Já pago</span>
           </label>
         </div>
         <div className="flex gap-2 mt-5">
-          <button onClick={onClose} className="flex-1 py-2 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50">
+          <button onClick={onClose} className="flex-1 py-2 border border-line rounded-xl text-sm font-medium text-fg-2 hover:bg-surface-2">
             Cancelar
           </button>
-          <button onClick={handleSave} className="flex-1 py-2 bg-blue-600 rounded-xl text-sm font-medium text-white hover:bg-blue-700">
+          <button onClick={handleSave} className="flex-1 py-2 bg-brand rounded-xl text-sm font-medium text-on-brand hover:bg-brand-strong">
             Salvar
           </button>
         </div>
@@ -139,12 +139,12 @@ export default function PlanejamentoMensal({ items, onChange }) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="hidden md:block">
-          <h2 className="text-xl font-bold text-gray-900">Planejamento Mensal</h2>
-          <p className="text-sm text-gray-500">Gastos fixos recorrentes</p>
+          <h2 className="text-xl font-bold text-fg">Planejamento Mensal</h2>
+          <p className="text-sm text-muted">Gastos fixos recorrentes</p>
         </div>
         <button
           onClick={() => setModal('new')}
-          className="flex items-center gap-1.5 bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors"
+          className="flex items-center gap-1.5 bg-brand text-on-brand px-4 py-2 rounded-xl text-sm font-medium hover:bg-brand-strong transition-colors"
         >
           <Plus size={16} /> Novo Item
         </button>
@@ -152,25 +152,25 @@ export default function PlanejamentoMensal({ items, onChange }) {
 
       {/* Summary cards */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="bg-blue-50 rounded-xl p-3 text-center">
-          <p className="text-xs text-blue-600 font-medium">Via Saldo</p>
-          <p className="text-base font-bold text-blue-800">{fmt(totalSaldo)}</p>
+        <div className="bg-brand/10 rounded-xl p-3 text-center">
+          <p className="text-xs text-brand font-medium">Via Saldo</p>
+          <p className="text-base font-bold text-brand">{fmt(totalSaldo)}</p>
         </div>
-        <div className="bg-purple-50 rounded-xl p-3 text-center">
-          <p className="text-xs text-purple-600 font-medium">Via Crédito</p>
-          <p className="text-base font-bold text-purple-800">{fmt(totalCredito)}</p>
+        <div className="bg-purple-500/10 rounded-xl p-3 text-center">
+          <p className="text-xs text-purple-400 font-medium">Via Crédito</p>
+          <p className="text-base font-bold text-purple-300">{fmt(totalCredito)}</p>
         </div>
-        <div className="bg-green-50 rounded-xl p-3 text-center">
-          <p className="text-xs text-green-600 font-medium">Pago</p>
-          <p className="text-base font-bold text-green-800">{fmt(totalPago)}</p>
+        <div className="bg-green-500/10 rounded-xl p-3 text-center">
+          <p className="text-xs text-green-400 font-medium">Pago</p>
+          <p className="text-base font-bold text-green-300">{fmt(totalPago)}</p>
         </div>
       </div>
 
       {/* Lists */}
       <div className="grid md:grid-cols-2 gap-4">
         <div>
-          <h3 className="text-sm font-semibold text-gray-600 mb-2 flex items-center gap-1.5">
-            <span className="w-2 h-2 bg-blue-500 rounded-full inline-block" />
+          <h3 className="text-sm font-semibold text-fg-2 mb-2 flex items-center gap-1.5">
+            <span className="w-2 h-2 bg-brand rounded-full inline-block" />
             Pagos pelo Saldo ({saldoItems.length})
           </h3>
           <div className="space-y-2">
@@ -180,7 +180,7 @@ export default function PlanejamentoMensal({ items, onChange }) {
           </div>
         </div>
         <div>
-          <h3 className="text-sm font-semibold text-gray-600 mb-2 flex items-center gap-1.5">
+          <h3 className="text-sm font-semibold text-fg-2 mb-2 flex items-center gap-1.5">
             <span className="w-2 h-2 bg-purple-500 rounded-full inline-block" />
             Pagos no Crédito ({creditoItems.length})
           </h3>
@@ -193,7 +193,7 @@ export default function PlanejamentoMensal({ items, onChange }) {
       </div>
 
       {/* Total */}
-      <div className="bg-gray-900 text-white rounded-2xl p-4 flex justify-between items-center">
+      <div className="bg-brand text-on-brand rounded-2xl p-4 flex justify-between items-center">
         <span className="font-medium">Total Mensal</span>
         <span className="text-xl font-bold">{fmt(totalGeral)}</span>
       </div>
